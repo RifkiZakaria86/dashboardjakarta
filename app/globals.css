@@ -1,0 +1,57 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: #000d2e;
+  color: #ffffff;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #000820; }
+::-webkit-scrollbar-thumb { background: #1e3a6e; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #2a52a0; }
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); opacity: 0.6; }
+  50% { transform: translateY(-20px); opacity: 1; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(-25%); animation-timing-function: cubic-bezier(0.8,0,1,1); }
+  50% { transform: none; animation-timing-function: cubic-bezier(0,0,0.2,1); }
+}
+
+.animate-fadeIn { animation: fadeIn 0.25s ease-out forwards; }
+.animate-float { animation: float 3s ease-in-out infinite; }
+.animate-bounce { animation: bounce 1s infinite; }
+
+/* Tailwind v4 utilities we need manually */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+/* bg-white/3 helper */
+.bg-white\/3 { background-color: rgba(255,255,255,0.03); }
+.hover\:bg-white\/8:hover { background-color: rgba(255,255,255,0.08); }
