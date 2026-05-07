@@ -137,7 +137,7 @@ export default function WilayahPage() {
             </div>
             <div>
               <div className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: region.color }}>
-                Stockyard Wilayah — {region.province}
+                Stockyard PPB — {region.province}
               </div>
               <h1 className="text-4xl sm:text-5xl font-black text-white">{region.name}</h1>
             </div>

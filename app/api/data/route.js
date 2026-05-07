@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import { REGIONS } from '../../../lib/regions';
 
+// Parse string "Rp 1,767,911,175" → number
 function parseRupiahString(str) {
   if (!str || typeof str !== 'string') return 0;
   const cleaned = str.replace(/Rp\s*/gi, '').replace(/\./g, '').replace(/,/g, '').trim();
@@ -11,60 +12,63 @@ function parseRupiahString(str) {
   return isNaN(num) ? 0 : num;
 }
 
-function colLetterToIndex(col) {
-  let result = 0;
-  for (let i = 0; i < col.length; i++) {
-    result = result * 26 + (col.charCodeAt(i) - 64);
+// Cek apakah baris adalah baris TOTAL/SUBTOTAL (harus di-skip)
+function isTotalRow(row) {
+  const keywords = ['total', 'jumlah', 'grand', 'sub total', 'rekapitulasi', 'subtotal'];
+  for (let i = 0; i < Math.min(5, row.length); i++) {
+    const v = String(row[i] || '').toLowerCase().trim();
+    if (keywords.some(k => v.includes(k))) return true;
   }
-  return result - 1;
+  return false;
 }
 
-function getTotalRupiah(region) {
-  const dataDir = path.join(process.cwd(), 'data');
-  const filePath = path.join(dataDir, region.excelFile);
+// Option B: Fetch live dari GAS (?action=getTotal)
+async function fetchTotalFromGAS(region) {
+  try {
+    const url = `${region.gasUrl}?action=getTotal`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    if (!res.ok) return null;
+    const ct = res.headers.get('content-type') || '';
+    if (!ct.includes('json')) return null;
+    const json = await res.json();
+    if (json.success && typeof json.total === 'number' && json.total > 0) {
+      console.log(`[GAS] ${region.name}: Rp ${json.total.toLocaleString('id-ID')}`);
+      return json.total;
+    }
+    return null;
+  } catch { return null; }
+}
 
-  if (!fs.existsSync(filePath)) {
-    console.error(`[WIKA] File not found: ${filePath}`);
-    return 0;
-  }
+// Fallback: Sum kolom Total Rupiah langsung dari Excel
+// (sudah dihitung di sheet = (stock+titipan)*harSat, sama dgn rumus GAS)
+function calcFromExcel(region) {
+  const filePath = path.join(process.cwd(), 'data', region.excelFile);
+  if (!fs.existsSync(filePath)) return 0;
 
-  // Read file as Buffer first, then parse - avoids Turbopack file access restrictions
-  const fileBuffer = fs.readFileSync(filePath);
-  const workbook = XLSX.read(fileBuffer, { type: 'buffer', cellDates: false, raw: true });
+  const buf = fs.readFileSync(filePath);
+  const wb = XLSX.read(buf, { type: 'buffer', raw: true });
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: true });
 
-  const sheetName = workbook.SheetNames[0];
-  const worksheet = workbook.Sheets[sheetName];
-  const jsonData = XLSX.utils.sheet_to_json(worksheet, {
-    header: 1,
-    defval: null,
-    raw: true,
-  });
-
-  const colIndex = colLetterToIndex(region.totalRupiahCol);
+  const { totalRupiahCol, rupiahIsString } = region;
   let total = 0;
 
-  for (let i = 0; i < jsonData.length; i++) {
-    const row = jsonData[i];
-    if (!row || row.length === 0) continue;
+  for (let i = 3; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row || row.every(v => v === null)) continue;
+    if (isTotalRow(row)) continue;
 
-    const cellVal = row[colIndex];
+    const cell = row[totalRupiahCol];
 
-    if (typeof cellVal === 'string') {
-      const lower = cellVal.toLowerCase();
-      // Skip header/label rows
-      if (lower.includes('total') || lower.includes('rupiah') || lower.includes('harsat') || lower.includes('nilai')) {
-        continue;
+    if (rupiahIsString) {
+      if (typeof cell === 'string' && cell.toLowerCase().includes('rp')) {
+        const v = parseRupiahString(cell);
+        if (v > 0) total += v;
+      } else if (typeof cell === 'number' && cell > 0) {
+        total += cell;
       }
-      // Parse "Rp 1,767,911,175" style strings (BOGOR format)
-      if (lower.includes('rp')) {
-        const parsed = parseRupiahString(cellVal);
-        if (parsed > 1000) total += parsed;
-      }
-      continue;
-    }
-
-    if (typeof cellVal === 'number' && cellVal > 1000) {
-      total += cellVal;
+    } else {
+      if (typeof cell === 'number' && cell > 0) total += cell;
     }
   }
 
@@ -73,44 +77,32 @@ function getTotalRupiah(region) {
 
 export async function GET() {
   try {
-    const results = {};
+    const entries = await Promise.all(
+      REGIONS.map(async (region) => {
+        let totalRupiah = 0;
+        let source = 'excel';
 
-    for (const region of REGIONS) {
-      try {
-        const total = getTotalRupiah(region);
-        console.log(`[WIKA] ${region.name}: Rp ${total.toLocaleString('id-ID')}`);
-        results[region.slug] = {
-          id: region.id,
-          name: region.name,
-          slug: region.slug,
-          province: region.province,
-          totalRupiah: total,
-          gasUrl: region.gasUrl,
-          color: region.color,
-          gradient: region.gradient,
-          icon: region.icon,
-        };
-      } catch (err) {
-        console.error(`[WIKA] Error processing ${region.name}:`, err.message);
-        results[region.slug] = {
-          id: region.id,
-          name: region.name,
-          slug: region.slug,
-          province: region.province,
-          totalRupiah: 0,
-          gasUrl: region.gasUrl,
-          color: region.color,
-          gradient: region.gradient,
-          icon: region.icon,
-        };
-      }
-    }
+        const gasTotal = await fetchTotalFromGAS(region);
+        if (gasTotal !== null) {
+          totalRupiah = gasTotal;
+          source = 'gas';
+        } else {
+          try { totalRupiah = calcFromExcel(region); } catch (e) {
+            console.error(`[EXCEL] ${region.name}:`, e.message);
+          }
+        }
 
-    return NextResponse.json({
-      success: true,
-      data: results,
-      updatedAt: new Date().toISOString(),
-    });
+        console.log(`[API] ${region.name} (${source}): Rp ${totalRupiah.toLocaleString('id-ID')}`);
+        return [region.slug, {
+          id: region.id, name: region.name, slug: region.slug,
+          province: region.province, totalRupiah, source,
+          gasUrl: region.gasUrl, color: region.color,
+          gradient: region.gradient, icon: region.icon,
+        }];
+      })
+    );
+
+    return NextResponse.json({ success: true, data: Object.fromEntries(entries), updatedAt: new Date().toISOString() });
   } catch (error) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }

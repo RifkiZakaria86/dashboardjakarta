@@ -72,21 +72,21 @@ export default function HeroSection({ totalAllRegions, isLoading }) {
         <div className={`flex justify-center mb-6 transition-all duration-1000 delay-100 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
           <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-yellow-400/10 border border-yellow-400/30 text-yellow-400 text-xs font-semibold tracking-widest uppercase">
             <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" />
-            Live Stockyard Monitor
+            Stockyard Management System
           </span>
         </div>
 
         {/* Heading */}
         <h1 className={`text-5xl sm:text-6xl lg:text-7xl font-black text-white mb-6 leading-tight transition-all duration-1000 delay-200 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-          Dashboard Stok
+          Dashboard SMS
           <span className="block bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-500 bg-clip-text text-transparent">
-            Wilayah WIKA Beton
+            WIKA Beton
           </span>
         </h1>
 
         {/* Subtitle */}
         <p className={`text-lg sm:text-xl text-blue-200/80 max-w-2xl mx-auto mb-12 leading-relaxed transition-all duration-1000 delay-300 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-          Pantau nilai rupiah stok <strong className="text-white">7 wilayah</strong> PT WIKA Beton secara real-time.
+          Pantau nilai rupiah stok <strong className="text-white">7 Pabrik Produk Beton</strong> PT WIKA Beton secara real-time.
           Data terupdate langsung dari laporan opname stockyard.
         </p>
 
@@ -106,7 +106,7 @@ export default function HeroSection({ totalAllRegions, isLoading }) {
                 </>
               )}
             </div>
-            <div className="text-blue-300/50 text-xs mt-2">Dari 7 Wilayah Operasional</div>
+            <div className="text-blue-300/50 text-xs mt-2">Dari 7 Pabrik Produk Beton</div>
           </div>
         </div>
 
@@ -135,7 +135,7 @@ export default function HeroSection({ totalAllRegions, isLoading }) {
         {/* Stats */}
         <div className={`grid grid-cols-3 gap-6 max-w-lg mx-auto mt-20 transition-all duration-1000 delay-700 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
           {[
-            { label: 'Wilayah', value: '7' },
+            { label: 'PPB', value: '7' },
             { label: 'Stockyard', value: '15+' },
             { label: 'Update', value: 'Real-time' },
           ].map((stat) => (

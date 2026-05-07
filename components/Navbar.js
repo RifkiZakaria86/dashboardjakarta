@@ -50,7 +50,7 @@ export default function Navbar() {
             </div>
             <div>
               <div className="text-white font-bold text-lg leading-tight tracking-wide">WIKA Beton</div>
-              <div className="text-yellow-400 text-xs font-medium tracking-widest uppercase">Dashboard Stok</div>
+              <div className="text-yellow-400 text-xs font-medium tracking-widest uppercase">Dashboard Stockyard</div>
             </div>
           </Link>
 
@@ -69,7 +69,7 @@ export default function Navbar() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                Wilayah
+                Produk Pabrik Beton
                 <svg
                   className={`w-4 h-4 transition-transform duration-300 ${dropdownOpen ? 'rotate-180' : ''}`}
                   fill="none" stroke="currentColor" viewBox="0 0 24 24"
